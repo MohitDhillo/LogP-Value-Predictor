@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
@@ -9,6 +10,15 @@ import os
 app = FastAPI(title="Molecular Property Prediction API",
              description="API for predicting LogP values from SMILES strings",
              version="1.0.0")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 class MoleculeInput(BaseModel):
     smiles: str
@@ -45,14 +55,19 @@ def get_molecular_descriptors(mol):
 try:
     model = joblib.load('model.joblib')
     scaler = joblib.load('scaler.joblib')
-except:
-    print("Warning: Model files not found. Please train the model first.")
+except Exception as e:
+    print(f"Warning: Error loading model files: {str(e)}")
+    model = None
+    scaler = None
 
 @app.post("/predict")
 async def predict_logp(molecule: MoleculeInput):
     """
     Predict LogP value for a given SMILES string
     """
+    if model is None or scaler is None:
+        raise HTTPException(status_code=500, detail="Model not loaded. Please check the deployment.")
+    
     # Validate SMILES
     mol = validate_smiles(molecule.smiles)
     if mol is None:
@@ -81,4 +96,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port) 

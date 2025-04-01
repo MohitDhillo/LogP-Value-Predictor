@@ -3,6 +3,7 @@ import requests
 import json
 from rdkit import Chem
 import io
+import os
 
 # Try to import Draw module, but don't fail if it's not available
 try:
@@ -19,14 +20,15 @@ st.set_page_config(
     layout="wide"
 )
 
+# API endpoint configuration
+API_URL = os.getenv('API_URL', 'http://localhost:8000')
+st.sidebar.markdown(f"API URL: {API_URL}")
+
 # Title and description
 st.title("🧪 LogP Value Predictor")
 st.markdown("""
 This application predicts the LogP (octanol-water partition coefficient) value for molecules based on their SMILES representation.
 """)
-
-# API endpoint
-API_URL = "http://localhost:8000"
 
 # Input section
 st.header("Input Molecule")
@@ -51,27 +53,32 @@ if smiles_input:
             # Make prediction
             if st.button("Predict LogP"):
                 with st.spinner("Making prediction..."):
-                    response = requests.post(
-                        f"{API_URL}/predict",
-                        json={"smiles": smiles_input}
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/predict",
+                            json={"smiles": smiles_input},
+                            timeout=10  # Add timeout
+                        )
                         
-                        # Display results
-                        st.header("Prediction Results")
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.metric("Predicted LogP", f"{result['predicted_logp']:.2f}")
-                        
-                        with col2:
-                            st.subheader("Molecular Descriptors")
-                            for key, value in result['molecular_descriptors'].items():
-                                st.write(f"{key}: {value:.2f}")
-                    else:
-                        st.error(f"Error: {response.json()['detail']}")
+                        if response.status_code == 200:
+                            result = response.json()
+                            
+                            # Display results
+                            st.header("Prediction Results")
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                st.metric("Predicted LogP", f"{result['predicted_logp']:.2f}")
+                            
+                            with col2:
+                                st.subheader("Molecular Descriptors")
+                                for key, value in result['molecular_descriptors'].items():
+                                    st.write(f"{key}: {value:.2f}")
+                        else:
+                            st.error(f"Error: {response.json()['detail']}")
+                    except requests.exceptions.RequestException as e:
+                        st.error(f"Connection error: Unable to connect to the prediction service. Please check if the API is running and accessible.")
+                        st.error(f"Technical details: {str(e)}")
     
     except Exception as e:
         st.error(f"Error: {str(e)}")

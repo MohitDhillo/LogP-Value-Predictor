@@ -28,7 +28,7 @@ A machine learning application for predicting LogP (octanol-water partition coef
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd LogP-Value-Predictor
+cd logp-value-predictor
 ```
 
 2. Create a virtual environment (recommended):
@@ -45,9 +45,12 @@ pip install -r requirements.txt
 ## Project Structure
 
 ```
-LogP-Value-Predictor/
+molecular-property-predictor/
 ├── README.md
 ├── requirements.txt
+├── packages.txt
+├── .streamlit/
+│   └── config.toml
 ├── molecular_property_prediction.py  # Model training script
 ├── api.py                           # FastAPI backend
 ├── app.py                           # Streamlit frontend
@@ -88,6 +91,23 @@ streamlit run app.py
 ```
 
 The web interface will be available at `http://localhost:8501`
+
+## Deployment
+
+### Deploying the Backend (FastAPI)
+
+1. Deploy the FastAPI backend to a cloud service (e.g., Heroku, DigitalOcean, AWS)
+2. Make sure to include the model.joblib and scaler.joblib files in your deployment
+3. Note down the deployed API URL
+
+### Deploying the Frontend (Streamlit)
+
+1. Push your code to GitHub
+2. Go to [Streamlit Cloud](https://share.streamlit.io/)
+3. Connect your GitHub repository
+4. Add the following environment variable in Streamlit Cloud settings:
+   - Name: `API_URL`
+   - Value: Your deployed FastAPI URL (e.g., `https://your-api.herokuapp.com`)
 
 ## Using the Application
 
