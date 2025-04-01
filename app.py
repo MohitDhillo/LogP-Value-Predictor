@@ -2,8 +2,15 @@ import streamlit as st
 import requests
 import json
 from rdkit import Chem
-from rdkit.Chem import Draw
 import io
+
+# Try to import Draw module, but don't fail if it's not available
+try:
+    from rdkit.Chem import Draw
+    DRAWING_AVAILABLE = True
+except ImportError:
+    DRAWING_AVAILABLE = False
+    st.warning("Molecule visualization is not available in this environment. The app will still function for predictions.")
 
 # Set page config
 st.set_page_config(
@@ -32,13 +39,14 @@ if smiles_input:
         if mol is None:
             st.error("Invalid SMILES string. Please check your input.")
         else:
-            # Display molecule structure
-            st.subheader("Molecule Structure")
-            img = Draw.MolToImage(mol)
-            # Create a container for the image with a specific width
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                st.image(img, caption="Molecule Structure", use_container_width=True)
+            # Display molecule structure if available
+            if DRAWING_AVAILABLE:
+                st.subheader("Molecule Structure")
+                img = Draw.MolToImage(mol)
+                # Create a container for the image with a specific width
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    st.image(img, caption="Molecule Structure", use_container_width=True)
             
             # Make prediction
             if st.button("Predict LogP"):
